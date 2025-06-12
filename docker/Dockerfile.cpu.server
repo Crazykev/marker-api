@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the project files into the Docker image
-COPY ../ ./
+COPY ./ ./
 
 # Install Python dependencies
 RUN pip install -e .
