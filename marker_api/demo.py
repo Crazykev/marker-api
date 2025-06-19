@@ -58,22 +58,41 @@ def parse_document(input_file_path, parameters, request: gr.Request):
                 post_url, files=files, headers={"accept": "application/json"}
             )
 
+        # Check if response is successful
+        response.raise_for_status()
+        
+        # Parse response JSON
         document_response = response.json()
+        
+        # Check if the conversion was successful
+        if document_response.get("status") != "Success" or not document_response.get("result"):
+            error_msg = document_response.get("result", {}).get("error", "Unknown error occurred")
+            raise gr.Error(f"Conversion failed: {error_msg}")
+        
+        # Extract result data
+        result = document_response["result"]
+        markdown_text = result.get("markdown", "")
+        images_dict = result.get("images", {})
 
-        images = document_response.get("images", [])
-
-        # Decode each base64-encoded image to a PIL image
-        pil_images = [
-            decode_base64_to_pil(image_dict["image"]) for image_dict in images
-        ]
+        # Convert images dictionary to list of PIL images for gallery
+        pil_images = []
+        if images_dict:
+            for image_name, base64_image in images_dict.items():
+                try:
+                    pil_image = decode_base64_to_pil(base64_image)
+                    pil_images.append(pil_image)
+                except Exception as img_error:
+                    print(f"Error decoding image {image_name}: {img_error}")
 
         return (
-            str(document_response["text"]),
+            markdown_text,
             gr.Gallery(value=pil_images, visible=True),
-            str(document_response["text"]),
+            markdown_text,
             gr.JSON(value=document_response, visible=True),
         )
 
+    except requests.exceptions.RequestException as req_error:
+        raise gr.Error(f"Request failed: {req_error}")
     except Exception as e:
         raise gr.Error(f"Failed to parse: {e}")
 
