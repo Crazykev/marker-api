@@ -6,6 +6,7 @@ import io
 from art import text2art
 from PIL import Image
 import logging
+from marker.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +28,13 @@ def process_image_to_base64(image: Image.Image, filename: str) -> str:
     str: The base64 encoded string of the image.
     """
     try:
-        # Save image as PNG in memory
+        # Save image using settings format in memory
         img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format="PNG")
+        image.save(img_byte_arr, format=settings.OUTPUT_IMAGE_FORMAT)
         img_byte_arr = img_byte_arr.getvalue()
 
-        # Convert image to base64
-        image_base64 = base64.b64encode(img_byte_arr).decode("utf-8")
+        # Convert image to base64 using settings encoding
+        image_base64 = base64.b64encode(img_byte_arr).decode(settings.OUTPUT_ENCODING)
 
         return image_base64
     except Exception as e:

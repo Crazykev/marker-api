@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import concurrent.futures
 from marker.logger import configure_logging  # Import logging configuration
-from marker.models import load_all_models  # Import function to load models
+from marker.models import create_model_dict  # Import function to load models
 from marker_api.routes import (
     process_pdf_file,
 )
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     global model_list
     logger.debug("--------------------- Loading OCR Model -----------------------")
     print_markerapi_text_art()
-    model_list = load_all_models()
+    model_list = create_model_dict()
     yield
 
 

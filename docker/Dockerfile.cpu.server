@@ -16,7 +16,7 @@ COPY ./ ./
 # Install Python dependencies
 RUN pip install -e .
 
-RUN python -c 'from marker.models import load_all_models; load_all_models()'
+RUN python -c 'from marker.models import create_model_dict; create_model_dict()'
 
 EXPOSE 8080
 
