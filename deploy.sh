@@ -54,8 +54,8 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
     pkill -f "python.*server.py" || true
     sleep 3
     
-    echo "🚀 启动服务..."
-    nohup python3 server.py --host 0.0.0.0 --port 8080 > server.log 2>&1 &
+    echo "🚀 启动服务（CPU模式）..."
+    nohup TORCH_DEVICE=cpu python3 server.py --host 0.0.0.0 --port 8080 > server.log 2>&1 &
     
     echo "⏳ 等待服务启动（模型加载需要时间）..."
     sleep 15
