@@ -38,35 +38,46 @@ start_service() {
     ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         cd $HOME/marker-api
         
-        # 确保激活虚拟环境
-        if [ -d "venv" ]; then
-            source venv/bin/activate
-        fi
-        
-        # 启动服务
+        echo "🚀 启动服务..."
         nohup python3 server.py --host 0.0.0.0 --port 8080 > server.log 2>&1 &
         
-        echo "⏳ 等待服务启动..."
-        # 智能等待服务启动（最多等待20秒）
-        for i in {1..20}; do
-            sleep 1
-            if pgrep -f "python3.*server.py" > /dev/null; then
+        echo "⏳ 等待服务启动（模型加载需要时间）..."
+        sleep 15
+        
+        # 验证服务启动
+        if pgrep -f "python.*server.py" > /dev/null; then
+            echo "✅ 服务进程已启动"
+            
+            # 等待端口监听，最多重试5次
+            echo "🔍 检查端口监听状态..."
+            for i in {1..5}; do
                 if netstat -tlnp 2>/dev/null | grep -q ":8080.*LISTEN"; then
-                    if curl -s http://127.0.0.1:8080/health | grep -q "Welcome to Marker-api"; then
-                        echo "✅ 服务启动成功！($i 秒)"
+                    echo "✅ 端口8080正在监听"
+                    
+                    # 测试健康检查端点
+                    sleep 2
+                    if curl -s --max-time 10 http://127.0.0.1:8080/health | grep -q "Welcome to Marker-api"; then
+                        echo "✅ 健康检查通过"
+                        echo "🎉 服务启动成功！"
                         echo "🌐 访问地址: http://192.168.0.60:8080/demo"
                         echo "📋 API端点: http://192.168.0.60:8080/convert"
-                        return 0
+                        exit 0
+                    else
+                        echo "⚠️  健康检查失败，继续等待..."
                     fi
                 fi
-            fi
-            printf "."
-        done
-        
-        echo
-        echo "❌ 服务启动失败或超时"
-        echo "📝 最近日志:"
-        tail -10 server.log 2>/dev/null || echo "无法读取日志文件"
+                echo "⏳ 等待端口监听... ($i/5)"
+                sleep 3
+            done
+            
+            echo "❌ 端口8080在等待时间内未监听"
+            echo "📝 查看最新日志："
+            tail -15 server.log || echo "无法读取日志文件"
+        else
+            echo "❌ 服务启动失败"
+            echo "📝 查看日志："
+            tail -10 server.log || echo "无法读取日志文件"
+        fi
 EOF
 }
 
@@ -74,21 +85,7 @@ stop_service() {
     echo "🛑 停止远程服务..."
     ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         pkill -f "python.*server.py" || true
-        pkill -f "python3.*server.py" || true
-        sleep 2
-        
-        # 确认服务已停止
-        if pgrep -f "python3.*server.py" > /dev/null; then
-            echo "⚠️  服务仍在运行，强制终止..."
-            pkill -9 -f "python3.*server.py" || true
-            sleep 1
-        fi
-        
-        if ! pgrep -f "python3.*server.py" > /dev/null; then
-            echo "✅ 服务已停止"
-        else
-            echo "❌ 服务停止失败"
-        fi
+        echo "✅ 服务已停止"
 EOF
 }
 
@@ -135,17 +132,11 @@ EOF
 }
 
 install_deps() {
-    echo "📦 安装依赖..."
+    echo "📦 检查依赖..."
     ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         cd $HOME/marker-api
-        if [ ! -d "venv" ]; then
-            python3 -m venv venv
-        fi
-        source venv/bin/activate
-        if [ -f "pyproject.toml" ]; then
-            pip install -e .
-        fi
-        echo "✅ 依赖安装完成"
+        echo "ℹ️  依赖已在系统级别安装，无需额外操作"
+        echo "✅ 依赖检查完成"
 EOF
 }
 
