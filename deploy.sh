@@ -32,7 +32,7 @@ fi
 # 步骤2: 推送到远程仓库
 echo
 echo "📤 推送到GitHub远程仓库..."
-git push origin $REMOTE_BRANCH
+git push custom $REMOTE_BRANCH
 echo "✅ 推送完成"
 
 # 步骤3: 连接到远程主机并执行部署
