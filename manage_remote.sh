@@ -37,18 +37,36 @@ start_service() {
     echo "🚀 启动远程服务..."
     ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         cd $HOME/marker-api
+        
+        # 确保激活虚拟环境
         if [ -d "venv" ]; then
             source venv/bin/activate
         fi
-        nohup python server.py --host 0.0.0.0 --port 8080 > server.log 2>&1 &
-        echo "✅ 服务已启动"
-        sleep 2
-        if pgrep -f "python.*server.py" > /dev/null; then
-            echo "✅ 服务运行正常"
-            echo "🌐 访问地址: http://192.168.0.60:8080/demo"
-        else
-            echo "❌ 服务启动失败"
-        fi
+        
+        # 启动服务
+        nohup python3 server.py --host 0.0.0.0 --port 8080 > server.log 2>&1 &
+        
+        echo "⏳ 等待服务启动..."
+        # 智能等待服务启动（最多等待20秒）
+        for i in {1..20}; do
+            sleep 1
+            if pgrep -f "python3.*server.py" > /dev/null; then
+                if netstat -tlnp 2>/dev/null | grep -q ":8080.*LISTEN"; then
+                    if curl -s http://127.0.0.1:8080/health | grep -q "Welcome to Marker-api"; then
+                        echo "✅ 服务启动成功！($i 秒)"
+                        echo "🌐 访问地址: http://192.168.0.60:8080/demo"
+                        echo "📋 API端点: http://192.168.0.60:8080/convert"
+                        return 0
+                    fi
+                fi
+            fi
+            printf "."
+        done
+        
+        echo
+        echo "❌ 服务启动失败或超时"
+        echo "📝 最近日志:"
+        tail -10 server.log 2>/dev/null || echo "无法读取日志文件"
 EOF
 }
 
@@ -56,7 +74,21 @@ stop_service() {
     echo "🛑 停止远程服务..."
     ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         pkill -f "python.*server.py" || true
-        echo "✅ 服务已停止"
+        pkill -f "python3.*server.py" || true
+        sleep 2
+        
+        # 确认服务已停止
+        if pgrep -f "python3.*server.py" > /dev/null; then
+            echo "⚠️  服务仍在运行，强制终止..."
+            pkill -9 -f "python3.*server.py" || true
+            sleep 1
+        fi
+        
+        if ! pgrep -f "python3.*server.py" > /dev/null; then
+            echo "✅ 服务已停止"
+        else
+            echo "❌ 服务停止失败"
+        fi
 EOF
 }
 
