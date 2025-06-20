@@ -103,11 +103,15 @@ def main():
     parser = argparse.ArgumentParser(description="Run the marker-api server.")
     parser.add_argument("--host", default="0.0.0.0", help="Host IP address")
     parser.add_argument("--port", type=int, default=8080, help="Port number")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
     import uvicorn
 
-    uvicorn.run("server:app", host=args.host, port=args.port)
+    # Set log level based on debug flag or DEBUG environment variable
+    log_level = "debug" if args.debug or os.getenv("DEBUG", "").lower() == "true" else "info"
+    
+    uvicorn.run("server:app", host=args.host, port=args.port, log_level=log_level)
 
 
 # Entry point to start the server
