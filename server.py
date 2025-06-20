@@ -52,7 +52,7 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-app = gr.mount_gradio_app(app, demo_ui, path="")
+app = gr.mount_gradio_app(app, demo_ui, path="/demo")
 
 
 @app.get("/health", response_model=HealthResponse)

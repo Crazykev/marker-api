@@ -53,7 +53,7 @@ def parse_document(input_file_path, parameters, request: gr.Request):
             mime_type = "application/octet-stream"  # Default MIME type if not found
 
         with open(input_file_path, "rb") as f:
-            files = {"file": (input_file_path, f, mime_type)}
+            files = {"pdf_file": (input_file_path, f, mime_type)}
             response = requests.post(
                 post_url, files=files, headers={"accept": "application/json"}
             )
